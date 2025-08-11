@@ -135,7 +135,10 @@ const createMediaView = (_) =>
       const { id } = props;
 
       // get item
-      const item = root.query('GET_ITEM', { id: props.id });
+      const item = root.query('GET_ITEM', {
+        id: props.id,
+        mediaPreviewHeight: props.mediaPreviewHeight,
+      });
       let tagName = isPreviewableAudio(item.file) ? 'audio' : 'video';
 
       root.ref.media = document.createElement(tagName);
@@ -165,7 +168,7 @@ const createMediaView = (_) =>
     },
     write: _.utils.createRoute({
       DID_MEDIA_PREVIEW_LOAD: ({ root, props }) => {
-        const { id } = props;
+        const { id, mediaPreviewHeight } = props;
 
         // get item
         const item = root.query('GET_ITEM', { id: props.id });
@@ -188,7 +191,12 @@ const createMediaView = (_) =>
           'loadeddata',
           () => {
             let height = 75; // default height for audio panel
-            if (isPreviewableVideo(item.file)) {
+            if (isPreviewableVideo(item.file) && mediaPreviewHeight) {
+              height = mediaPreviewHeight;
+              root.element
+                .querySelector('video')
+                .setAttribute('height', height);
+            } else {
               let containerWidth = root.ref.media.offsetWidth;
               let factor = root.ref.media.videoWidth / containerWidth;
               height = root.ref.media.videoHeight / factor;
@@ -210,13 +218,14 @@ const createMediaWrapperView = (_) => {
    * Write handler for when preview container has been created
    */
   const didCreatePreviewContainer = ({ root, props }) => {
-    const { id } = props;
+    const { id, mediaPreviewHeight } = props;
     const item = root.query('GET_ITEM', id);
     if (!item) return;
 
     // the preview is now ready to be drawn
     root.dispatch('DID_MEDIA_PREVIEW_LOAD', {
       id,
+      mediaPreviewHeight,
     });
   };
 
@@ -230,6 +239,7 @@ const createMediaWrapperView = (_) => {
     root.ref.media = root.appendChildView(
       root.createChildView(media, {
         id: props.id,
+        mediaPreviewHeight: props.mediaPreviewHeight,
       })
     );
   };
@@ -268,6 +278,7 @@ const plugin = (fpAPI) => {
       const item = query('GET_ITEM', id);
       const allowVideoPreview = query('GET_ALLOW_VIDEO_PREVIEW');
       const allowAudioPreview = query('GET_ALLOW_AUDIO_PREVIEW');
+      const mediaPreviewHeight = query('GET_MEDIA_PREVIEW_HEIGHT');
 
       if (
         !item ||
@@ -280,7 +291,7 @@ const plugin = (fpAPI) => {
 
       // set preview view
       root.ref.mediaPreview = view.appendChildView(
-        view.createChildView(mediaWrapperView, { id })
+        view.createChildView(mediaWrapperView, { id, mediaPreviewHeight })
       );
 
       // now ready
@@ -317,6 +328,7 @@ const plugin = (fpAPI) => {
     options: {
       allowVideoPreview: [true, Type.BOOLEAN],
       allowAudioPreview: [true, Type.BOOLEAN],
+      mediaPreviewHeight: [undefined, Type.STRING],
     },
   };
 };
