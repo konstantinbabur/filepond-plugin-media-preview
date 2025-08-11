@@ -144,6 +144,7 @@
         let tagName = isPreviewableAudio(item.file) ? 'audio' : 'video';
         root.ref.media = document.createElement(tagName);
         root.ref.media.setAttribute('controls', true);
+        root.ref.media.setAttribute('preload', 'metadata');
         root.element.appendChild(root.ref.media);
         if (isPreviewableAudio(item.file)) {
           let docfrag = document.createDocumentFragment();
